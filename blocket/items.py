@@ -1,20 +1,42 @@
 # -*- coding: utf-8 -*-
+"""
 
-# Define here the models for your scraped items
-#
-# See documentation in:
-# http://doc.scrapy.org/en/latest/topics/items.html
+"""
 
-import scrapy
+from scrapy import Item, Field
 
 
-class BlocketItem(scrapy.Item):
-	# use item processors to convert to desired type, filter, etc
-	# http://doc.scrapy.org/en/latest/topics/loaders.html#declaring-input-and-output-processors
+class CarListItem(Item):
+    date = Field()
+    butik_url = Field()
+    price = Field()
+    location = Field()
+    title = Field()
+    url = Field()
 
-	name = scrapy.Field()
-	link = scrapy.Field()
-	price = scrapy.Field()
-	area = scrapy.Field()
-	date = scrapy.Field()
-	time = scrapy.Field()
+
+class CarDetailsItem(Item):
+    date_collected = Field()
+    title = Field()
+    date_announced = Field()
+    county = Field()
+    city = Field()
+    price = Field()
+    price_old = Field()
+    url = Field()
+    butik_url = Field()
+    model_year = Field()
+    gearbox = Field()
+    mileage = Field()
+    year = Field()
+    fuel = Field()
+    description = Field()
+
+    brand = Field()
+    model = Field()
+    in_traffic = Field()
+    horse_power = Field()
+    type = Field()
+    color = Field()
+    rear_wheels = Field()
+    emissions = Field()

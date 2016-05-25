@@ -1,58 +1,129 @@
-import scrapy 
+# -*- coding: utf-8 -*-
+from __future__ import print_function
 
-from scrapy.contrib.spiders import CrawlSpider, Rule 
-from scrapy.contrib.linkextractors import LinkExtractor
-from scrapy.contrib.loader import XPathItemLoader
-from scrapy.contrib.loader.processor import Join, MapCompose
-from scrapy.selector import HtmlXPathSelector
+from urlparse import urlparse
+from datetime import datetime
 
-from blocket.items import BlocketItem
+from scrapy.http import Request
+from scrapy.contrib.spiders import CrawlSpider, Rule
+from scrapy.selector import Selector
+
+from blocket.items import CarListItem, CarDetailsItem
 
 
 class MySpider(CrawlSpider):
-	""" Spider for scraping Blocket.se"""
-	name = 'blocket'
-	allowed_domains = ['blocket.se']
-	start_urls = [
-		"http://www.blocket.se/vasterbotten?q=&cg=1020&w=1&st=s&ps=5&pe=7&mys=&mye=&ms=&me=&cxpf=&cxpt=&gb=&fu=&cxdw=&ca=2&is=1&l=0&md=th"
-	]
+    """ Spider for scraping Blocket.se"""
+    name = 'collect_cars'
+    allowed_domains = ['blocket.se']
+    start_urls = [
+        'https://www.blocket.se/hela_sverige/bilar?ca=2&cg=1020&st=s&ps=5&pe=7'
+        '&l=0&cp=&w=3&f=a'
+    ]
 
-	items_list_xpath = '//div[@class="item_row"]'
-	item_fields = { 'name' : './/a[@class="item_link"]/text()',
-					'link' : './/a[@class="item_link"]/@href',
-					'price' : './/p[@class="list_price"]/text()',
-					'area' : './/span[@class="list_area"]//a/text()',
-					'date' : './/div[@class="list_date"]/text()',
-					'time' : './/span[@class="list_time"]/text()'
-	}
-	# rules = (  )
-	
-	def parse(self, response):
-		"""
-        Default callback used by Scrapy to process downloaded responses
+    def parse(self, response):
+        listing = Selector(response).xpath('//div[@id="item_list"]/article')
 
-        """
-		# item = BlocketItem()
-		# for i in response.xpath('//div[@class="item_row"]/div[@class="desc"]'):
-		# 	item['price'] = i.xpath('p/text()').extract()
-		# 	item['desc'] = i.xpath('a/text()').extract()
-		# 	item['link'] = i.xpath('a/@href')
-		# 	yield item
+        for itm in listing:
+            try:
+                butik_url = response.urljoin(
+                    urlparse(itm.xpath('.//header//a/@href').extract()[0]).path
+                )
+            except:
+                butik_url = None
 
-		selector = HtmlXPathSelector(response)
-		for item in selector.select(self.items_list_xpath):
-			loader = XPathItemLoader(BlocketItem(), selector=item)
+            county = itm.xpath('.//header/div/text()').extract_first()
+            url = response.urljoin(
+                urlparse(itm.xpath('.//h1/a/@href').extract()[0]).path
+            )
+            meta = dict()
+            meta['butik_url'] = butik_url
+            meta['county'] = county
 
-			# define processors
+            yield Request(url, meta=meta, callback=self.parse_details)
 
-			# iterate over fields and add xpath to the loader
-			for field, xpath in self.item_fields.iteritems():
-				loader.add_xpath(field, xpath)
-			print '*' * 50
-			yield loader.load_item()
-		
+        next_page = response.xpath(
+            "//*[@id='all_pages']/li/*[contains(text(), 'sta') and "
+            "not(contains(text(), 'Sista'))]/@href"
+        ).extract_first()
+        if next_page:
+            next_url = response.urljoin(next_page)
+            yield Request(next_url, callback=self.parse)
 
-		
+    def parse_details(self, response):
+        item = CarDetailsItem()
 
-		
+        item['date_collected'] = datetime.now()
+        item['title'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/header/'
+            'div[1]/h1//text()'
+        ).extract_first()
+        item['date_announced'] = response.xpath(
+            '//*[@id="seller-info"]/li[1]/time//text()'
+        ).extract_first() # TODO: humanToDate
+        item['county'] = response.meta.get('county', None)
+        item['city'] = response.xpath(
+            '//*[@id="ad_location"]//span/text()'
+        ).extract_first() # TODO: clean
+        item['price'] = response.xpath(
+            '//*[@id="vi_price"]//text()'
 
+        ).extract_first() # TODO clean
+        item['price_old'] = response.xpath(
+            '//*[@id="price_container"]/div/div[2]/span/s//text()'
+        ).extract_first() # TODO clean
+        item['url'] = response.url
+        item['butik_url'] = response.meta.get('butik_url', None)
+        item['model_year'] = response.xpath(
+            '//*[@id="item_details"]/dl[1]/dd//text()'
+        ).extract_first()
+        item['gearbox'] = response.xpath(
+            '//*[@id="item_details"]/dl[2]/dd//text()'
+        ).extract_first()
+        item['mileage'] = response.xpath(
+            '//*[@id="item_details"]/dl[3]/dd//text()'
+        ).extract_first()
+        item['year'] = response.xpath(
+            '//*[@id="item_details"]/dl[4]/dd//text()'
+        ).extract_first()
+        item['fuel'] = response.xpath(
+            '//*[@id="item_details"]/dl[5]/dd//text()'
+        ).extract_first()
+        item['description'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
+            'div[1]/div/div[2]/text()'
+        ).extract_first()
+        item['brand'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
+            'div[1]/div/aside/div[1]/div/div/div/ul/li[1]/text()'
+        ).extract_first()
+        item['model'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
+            'div[1]/div/aside/div[1]/div/div/div/ul/li[3]/text()'
+        ).extract_first()
+        item['in_traffic'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
+            'div[1]/div/aside/div[1]/div/div/div/ul/li[5]/text()'
+        ).extract_first()
+        item['horse_power'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
+            'div[1]/div/aside/div[1]/div/div/div/ul/li[7]/text()'
+        ).extract_first()
+        item['type'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
+            'div[1]/div/aside/div[1]/div/div/div/ul/li[2]/text()'
+        ).extract_first()
+        item['color'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
+            'div[1]/div/aside/div[1]/div/div/div/ul/li[4]/text()'
+        ).extract_first()
+        item['rear_wheels'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
+            'div[1]/div/aside/div[1]/div/div/div/ul/li[6]/text()'
+        ).extract_first()
+        item['emissions'] = response.xpath(
+            '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
+            'div[1]/div/aside/div[1]/div/div/div/ul/li[8]/text()'
+        ).extract_first()
+
+        yield item
+        import ipdb; ipdb.set_trace()
