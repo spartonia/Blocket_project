@@ -54,7 +54,7 @@ class MySpider(CrawlSpider):
 
         item['is_available'] = True
 
-        item['date_collected'] = datetime.now()
+        item['date_collected'] = str(datetime.now())
         item['title'] = response.xpath(
             '//*[@id="blocket_content"]/div[1]/section/main/article/header/'
             'div[1]/h1//text()'
@@ -127,4 +127,3 @@ class MySpider(CrawlSpider):
         ).extract_first()
 
         yield item
-        import ipdb; ipdb.set_trace()
