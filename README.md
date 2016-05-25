@@ -11,6 +11,7 @@ $ pip install -r requirements.txt
 
 ## Usage
 Set MongoDB credentials in `settings.py` and run 
+
 `
 $ scrapy crawl collect_cars
 `
