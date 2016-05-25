@@ -1,4 +1,5 @@
 Blocket_project
 ===============
 
-Scraping classifieds service blocket.se to get car information and prices. 
+Scraping classifieds service blocket.se for car information. Scraped data is cleaned and 
+saved in MongoDB. 
