@@ -14,14 +14,12 @@ SPIDER_MODULES = ['blocket.spiders']
 NEWSPIDER_MODULE = 'blocket.spiders'
 
 
-DATABASE = {'drivername': 'mysql',
-			'host': '127.0.0.1',
-			'port' : '3306',
-			'username': '',
-			'password': '',
-			'database': 'scrapeBlocket'}
+ITEM_PIPELINES = {
+    'blocket.pipelines.CarDetailsPipeline': 300,
+    'blocket.pipelines.MongoDBPipeline': 310,
+}
 
-# ITEM_PIPELINES = ['blocket.pipelines.BlocketPipeline']
-
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'blocket (+http://www.yourdomain.com)'
+MONGODB_SERVER = "localhost"
+MONGODB_PORT = 27017
+MONGODB_DB = "stackoverflow"
+MONGODB_COLLECTION = "questions"

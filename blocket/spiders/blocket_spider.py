@@ -52,6 +52,8 @@ class MySpider(CrawlSpider):
     def parse_details(self, response):
         item = CarDetailsItem()
 
+        item['is_available'] = True
+
         item['date_collected'] = datetime.now()
         item['title'] = response.xpath(
             '//*[@id="blocket_content"]/div[1]/section/main/article/header/'
@@ -66,7 +68,6 @@ class MySpider(CrawlSpider):
         ).extract_first() # TODO: clean
         item['price'] = response.xpath(
             '//*[@id="vi_price"]//text()'
-
         ).extract_first() # TODO clean
         item['price_old'] = response.xpath(
             '//*[@id="price_container"]/div/div[2]/span/s//text()'
@@ -78,20 +79,20 @@ class MySpider(CrawlSpider):
         ).extract_first()
         item['gearbox'] = response.xpath(
             '//*[@id="item_details"]/dl[2]/dd//text()'
-        ).extract_first()
+        ).extract()
         item['mileage'] = response.xpath(
             '//*[@id="item_details"]/dl[3]/dd//text()'
-        ).extract_first()
+        ).extract()
         item['year'] = response.xpath(
             '//*[@id="item_details"]/dl[4]/dd//text()'
-        ).extract_first()
+        ).extract()
         item['fuel'] = response.xpath(
             '//*[@id="item_details"]/dl[5]/dd//text()'
-        ).extract_first()
+        ).extract()
         item['description'] = response.xpath(
             '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
             'div[1]/div/div[2]/text()'
-        ).extract_first()
+        ).extract()
         item['brand'] = response.xpath(
             '//*[@id="blocket_content"]/div[1]/section/main/article/div[2]/'
             'div[1]/div/aside/div[1]/div/div/div/ul/li[1]/text()'

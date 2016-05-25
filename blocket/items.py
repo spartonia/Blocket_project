@@ -16,6 +16,8 @@ class CarListItem(Item):
 
 
 class CarDetailsItem(Item):
+    is_available = Field()
+
     date_collected = Field()
     title = Field()
     date_announced = Field()
